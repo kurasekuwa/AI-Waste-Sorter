@@ -1,0 +1,566 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EcoSort | AI Waste Sorter</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #101713;
+  color: #edf5ef;
+  font-family: Arial, sans-serif;
+}
+
+header {
+  padding: 24px 6%;
+  border-bottom: 1px solid #29372e;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-size: 23px;
+  font-weight: bold;
+  color: #67df9a;
+}
+
+.subtitle {
+  color: #91a397;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+main {
+  max-width: 1100px;
+  margin: 35px auto;
+  padding: 0 20px;
+}
+
+h1 {
+  font-size: 30px;
+  margin-bottom: 8px;
+}
+
+.description {
+  color: #9baea1;
+  margin-bottom: 28px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 20px;
+}
+
+.panel {
+  background: #19231d;
+  border: 1px solid #304037;
+  border-radius: 13px;
+  padding: 22px;
+}
+
+.panel h2 {
+  font-size: 17px;
+  margin-top: 0;
+}
+
+.camera {
+  background: #0b100d;
+  width: 100%;
+  min-height: 250px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: #829187;
+}
+
+.camera canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+button {
+  border: none;
+  padding: 12px 16px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-weight: bold;
+  margin: 5px 4px 5px 0;
+  background: #67df9a;
+  color: #102017;
+}
+
+button.secondary {
+  background: #304037;
+  color: white;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+input {
+  width: 100%;
+  background: #101713;
+  border: 1px solid #405347;
+  color: white;
+  padding: 12px;
+  border-radius: 7px;
+  margin: 8px 0 12px;
+}
+
+.status {
+  color: #67df9a;
+  font-size: 13px;
+  margin: 12px 0;
+}
+
+.result {
+  font-size: 27px;
+  font-weight: bold;
+  margin: 15px 0;
+}
+
+.confidence {
+  color: #67df9a;
+  font-size: 14px;
+}
+
+.bar {
+  height: 8px;
+  background: #304037;
+  border-radius: 10px;
+  margin: 8px 0 15px;
+  overflow: hidden;
+}
+
+.fill {
+  height: 100%;
+  width: 0%;
+  background: #67df9a;
+  transition: width 0.2s;
+}
+
+.small {
+  color: #91a397;
+  font-size: 12px;
+}
+
+.log {
+  background: #101713;
+  padding: 12px;
+  border-radius: 7px;
+  font-family: monospace;
+  font-size: 12px;
+  height: 120px;
+  overflow-y: auto;
+  color: #a8c8b2;
+}
+
+.full {
+  grid-column: 1 / -1;
+}
+
+@media(max-width: 700px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  .full {
+    grid-column: auto;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div>
+    <div class="logo">♻ EcoSort</div>
+    <div class="subtitle">AI-POWERED WASTE MANAGEMENT</div>
+  </div>
+  <div class="small">PROTOTYPE V1.0</div>
+</header>
+
+<main>
+
+<h1>Waste Sorter Control Panel</h1>
+<p class="description">
+  Monitor AI predictions, inspect waste classifications,
+  and control your automated sorting mechanism.
+</p>
+
+<div class="grid">
+
+  <!-- CAMERA -->
+  <section class="panel">
+    <h2>01 / Camera Feed</h2>
+    <div class="camera" id="camera">
+      Camera not started
+    </div>
+
+    <p class="status" id="cameraStatus">Camera offline</p>
+
+    <button id="cameraBtn" onclick="startCamera()">
+      Start Camera
+    </button>
+  </section>
+
+  <!-- AI RESULTS -->
+  <section class="panel">
+    <h2>02 / AI Classification</h2>
+
+    <p class="small">CURRENT PREDICTION</p>
+    <div class="result" id="prediction">Waiting...</div>
+
+    <p class="confidence">
+      Confidence: <span id="confidence">0%</span>
+    </p>
+
+    <div class="bar">
+      <div class="fill" id="confidenceBar"></div>
+    </div>
+
+    <p class="small" id="aiStatus">
+      Load your model to begin.
+    </p>
+
+    <div id="allPredictions"></div>
+  </section>
+
+  <!-- MODEL SETTINGS -->
+  <section class="panel">
+    <h2>03 / AI Model</h2>
+
+    <button onclick="loadModel()">Load Local AI Model</button>
+
+    <p class="status" id="modelStatus">Model not loaded</p>
+  </section>
+
+  <!-- ARDUINO -->
+  <section class="panel">
+    <h2>04 / Hardware Connection</h2>
+
+    <p class="small">Arduino Uno R3 / USB Serial</p>
+
+    <p class="status" id="arduinoStatus">
+      Arduino disconnected
+    </p>
+
+    <button onclick="connectArduino()" id="connectBtn">
+      Connect Arduino
+    </button>
+
+    <p class="small">
+      Serial communication: 9600 baud
+    </p>
+  </section>
+
+  <!-- MANUAL CONTROLS -->
+  <section class="panel">
+    <h2>05 / Manual Servo Testing</h2>
+
+    <p class="small">
+      Test the sorting mechanism independently of the AI.
+    </p>
+
+    <button onclick="sendCommand('R')">Recyclable</button>
+    <button onclick="sendCommand('C')">Compost</button>
+    <button onclick="sendCommand('L')">Landfill</button>
+    <button class="secondary" onclick="sendCommand('N')">
+      Reset
+    </button>
+
+    <p class="status" id="servoStatus">Servo idle</p>
+  </section>
+
+  <!-- SYSTEM LOG -->
+  <section class="panel">
+    <h2>06 / System Activity</h2>
+    <div class="log" id="log">
+      EcoSort initialized.<br>
+      Awaiting system startup...
+    </div>
+  </section>
+
+  <section class="panel full">
+    <h2>System Settings</h2>
+
+    <label class="small">
+      Minimum AI confidence:
+      <span id="thresholdValue">85</span>%
+    </label>
+
+    <input
+      type="range"
+      id="threshold"
+      min="50"
+      max="99"
+      value="85"
+      oninput="updateThreshold()"
+    />
+
+    <p class="small">
+      Automatic sorting requires three consecutive confident
+      predictions. The system must detect an empty scene before
+      accepting another object.
+    </p>
+
+    <button onclick="toggleAuto()" id="autoBtn" class="secondary">
+      Enable Automatic Sorting
+    </button>
+
+    <p class="status" id="autoStatus">Automatic mode disabled</p>
+  </section>
+
+</div>
+</main>
+
+<script>
+
+// ==============================
+// SYSTEM VARIABLES
+// ==============================
+
+let model = null;
+let webcam = null;
+let port = null;
+let writer = null;
+
+let autoMode = false;
+let threshold = 0.85;
+
+let lastClass = "";
+let stableCount = 0;
+let objectProcessed = false;
+let busy = false;
+
+const classCommands = {
+  "recyclable": "R",
+  "recycle": "R",
+  "compost": "C",
+  "landfill": "L"
+};
+
+const emptyLabels = [
+  "empty",
+  "no object",
+  "nothing"
+];
+
+
+// ==============================
+// LOGGING
+// ==============================
+
+function log(message) {
+  const box = document.getElementById("log");
+  box.innerHTML += "<br>> " + message;
+  box.scrollTop = box.scrollHeight;
+}
+
+
+// ==============================
+// CAMERA
+// ==============================
+
+async function startCamera() {
+  try {
+    if (!model) {
+      alert("Load your AI model first!");
+      return;
+    }
+
+    webcam = new tmImage.Webcam(320, 320, true);
+
+    await webcam.setup();
+    await webcam.play();
+
+    const camera = document.getElementById("camera");
+    camera.innerHTML = "";
+    camera.appendChild(webcam.canvas);
+
+    document.getElementById("cameraStatus").textContent =
+      "Camera online";
+
+    document.getElementById("cameraBtn").disabled = true;
+
+    log("Webcam started.");
+
+    window.requestAnimationFrame(loop);
+
+  } catch (error) {
+    log("Camera error: " + error.message);
+    alert("Could not start webcam: " + error.message);
+  }
+}
+
+
+// ==============================
+// MODEL LOADING
+// ==============================
+
+
+async function loadModel() {
+  try {
+    document.getElementById("modelStatus").textContent =
+      "Loading local AI model...";
+
+    model = await tmImage.load(
+      "./my_model/model.json",
+      "./my_model/metadata.json"
+    );
+
+    document.getElementById("modelStatus").textContent =
+      "Local AI model successfully loaded!";
+
+    document.getElementById("aiStatus").textContent =
+      "Ready for image classification.";
+
+    log("Local Teachable Machine model loaded.");
+
+  } catch (error) {
+    model = null;
+
+    document.getElementById("modelStatus").textContent =
+      "Model loading failed.";
+
+    log("Model error: " + error.message);
+
+    alert("Could not load your local model. Check your folder structure.");
+  }
+}
+
+
+
+// ==============================
+// AI PREDICTION LOOP
+// ==============================
+
+async function loop() {
+  if (!webcam || !model) return;
+
+  webcam.update();
+
+  await predict();
+
+  window.requestAnimationFrame(loop);
+}
+
+
+async function predict() {
+  const predictions = await model.predict(webcam.canvas);
+
+  predictions.sort((a, b) => b.probability - a.probability);
+
+  const best = predictions[0];
+
+  const label = best.className.toLowerCase().trim();
+  const probability = best.probability;
+
+  document.getElementById("prediction").textContent =
+    best.className;
+
+  document.getElementById("confidence").textContent =
+    (probability * 100).toFixed(1) + "%";
+
+  document.getElementById("confidenceBar").style.width =
+    (probability * 100) + "%";
+
+  document.getElementById("allPredictions").innerHTML =
+    predictions.map(p =>
+      `<p class="small">${p.className}: ${(p.probability * 100).toFixed(1)}%</p>`
+    ).join("");
+
+  document.getElementById("aiStatus").textContent =
+    probability >= threshold
+      ? "Confident prediction"
+      : "Low confidence — waiting";
+
+  if (!autoMode || busy) return;
+
+  // Require confidence threshold
+  if (probability < threshold) {
+    stableCount = 0;
+    lastClass = "";
+    return;
+  }
+
+  // Empty scene resets the object lock
+  if (emptyLabels.includes(label)) {
+    stableCount = 0;
+    lastClass = "";
+
+    if (objectProcessed) {
+      objectProcessed = false;
+      log("Object removed. Ready for next item.");
+    }
+
+    return;
+  }
+
+  if (objectProcessed) return;
+
+  // Only accept known sorting categories
+  if (!classCommands[label]) {
+    stableCount = 0;
+    lastClass = "";
+    return;
+  }
+
+  if (label === lastClass) {
+    stableCount++;
+  } else {
+    lastClass = label;
+    stableCount = 1;
+  }
+
+  if (stableCount >= 3) {
+    objectProcessed = true;
+    stableCount = 0;
+
+    await sendCommand(classCommands[label]);
+
+    log("Sorted: " + label);
+  }
+}
+
+
+// ==============================
+// ARDUINO CONNECTION
+// ==============================
+
+async function connectArduino() {
+  if (!("serial" in navigator)) {
+    alert("Web Serial is not supported. Use Chrome or Edge.");
+    return;
+  }
+
+  try {
+    port = await navigator.serial.requestPort();
+
+    await port.open({ baudRate: 9600 });
+
+    writer = port.writable.getWriter();
+
+    document.getElementById("arduinoStatus").textContent =
+      "Arduino connected";
+
+    document.getElementById("connectBtn").disabled = true;
+
+    log("Arduino connected successfupython -m http.server 8000
