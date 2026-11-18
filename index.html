@@ -4,197 +4,178 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EcoSort | AI Waste Sorter</title>
+<title>The Processors' Waste Sorter</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
 
-<style>
-* {
-  box-sizing: border-box;
-}
 
+<style>
 body {
-  margin: 0;
-  background: #101713;
-  color: #edf5ef;
-  font-family: Arial, sans-serif;
+    background-color: lightgreen;
+    font-family: "Times New Roman", serif;
+    color: black;
+    margin: 15px;
 }
 
 header {
-  padding: 24px 6%;
-  border-bottom: 1px solid #29372e;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+    background-color: green;
+    color: white;
+    padding: 15px;
+    text-align: center;
+    border: 2px solid black;
 }
 
 .logo {
-  font-size: 23px;
-  font-weight: bold;
-  color: #67df9a;
+    font-size: 30px;
+    font-weight: bold;
 }
 
 .subtitle {
-  color: #91a397;
-  font-size: 12px;
-  margin-top: 5px;
+    font-size: 14px;
 }
 
 main {
-  max-width: 1100px;
-  margin: 35px auto;
-  padding: 0 20px;
+    margin: 20px;
 }
 
 h1 {
-  font-size: 30px;
-  margin-bottom: 8px;
+    color: darkgreen;
+    text-align: center;
+}
+
+h2 {
+    color: green;
+    text-decoration: underline;
 }
 
 .description {
-  color: #9baea1;
-  margin-bottom: 28px;
+    text-align: center;
 }
 
 .grid {
-  display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
-  gap: 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
 }
 
 .panel {
-  background: #19231d;
-  border: 1px solid #304037;
-  border-radius: 13px;
-  padding: 22px;
-}
-
-.panel h2 {
-  font-size: 17px;
-  margin-top: 0;
+    background-color: white;
+    border: 2px solid black;
+    padding: 15px;
+    border-radius: 0px;
 }
 
 .camera {
-  background: #0b100d;
-  width: 100%;
-  min-height: 250px;
-  border-radius: 9px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  color: #829187;
+    background-color: lightgray;
+    width: 100%;
+    min-height: 250px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid black;
+    overflow: hidden;
 }
 
 .camera canvas {
-  width: 100%;
-  height: auto;
-  display: block;
+    width: 100%;
+    height: auto;
 }
 
 button {
-  border: none;
-  padding: 12px 16px;
-  border-radius: 7px;
-  cursor: pointer;
-  font-weight: bold;
-  margin: 5px 4px 5px 0;
-  background: #67df9a;
-  color: #102017;
+    background-color: lightgray;
+    color: black;
+    border: 2px outset gray;
+    padding: 8px;
+    margin: 5px;
+    cursor: pointer;
+    font-family: "Times New Roman", serif;
+    font-size: 14px;
+}
+
+button:active {
+    border-style: inset;
 }
 
 button.secondary {
-  background: #304037;
-  color: white;
+    background-color: lightgray;
+    color: black;
 }
 
 button:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
+    color: gray;
 }
 
 input {
-  width: 100%;
-  background: #101713;
-  border: 1px solid #405347;
-  color: white;
-  padding: 12px;
-  border-radius: 7px;
-  margin: 8px 0 12px;
+    padding: 7px;
+    border: 1px solid black;
+    margin: 5px 0;
 }
 
 .status {
-  color: #67df9a;
-  font-size: 13px;
-  margin: 12px 0;
+    color: darkgreen;
+    font-weight: bold;
 }
 
 .result {
-  font-size: 27px;
-  font-weight: bold;
-  margin: 15px 0;
+    font-size: 26px;
+    font-weight: bold;
 }
 
 .confidence {
-  color: #67df9a;
-  font-size: 14px;
+    color: darkgreen;
 }
 
 .bar {
-  height: 8px;
-  background: #304037;
-  border-radius: 10px;
-  margin: 8px 0 15px;
-  overflow: hidden;
+    height: 15px;
+    background-color: lightgray;
+    border: 1px solid black;
 }
 
 .fill {
-  height: 100%;
-  width: 0%;
-  background: #67df9a;
-  transition: width 0.2s;
+    height: 100%;
+    width: 0%;
+    background-color: green;
 }
 
 .small {
-  color: #91a397;
-  font-size: 12px;
+    font-size: 13px;
 }
 
 .log {
-  background: #101713;
-  padding: 12px;
-  border-radius: 7px;
-  font-family: monospace;
-  font-size: 12px;
-  height: 120px;
-  overflow-y: auto;
-  color: #a8c8b2;
+    background-color: black;
+    color: lime;
+    padding: 10px;
+    height: 120px;
+    overflow-y: scroll;
+    font-family: monospace;
 }
 
 .full {
-  grid-column: 1 / -1;
+    grid-column: 1 / -1;
 }
 
-@media(max-width: 700px) {
-  .grid {
-    grid-template-columns: 1fr;
-  }
-  .full {
-    grid-column: auto;
-  }
+@media (max-width: 700px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
+
+    .full {
+        grid-column: auto;
+    }
 }
 </style>
+
 </head>
 
 <body>
 
 <header>
   <div>
-    <div class="logo">♻ EcoSort</div>
-    <div class="subtitle">AI-POWERED WASTE MANAGEMENT</div>
+    <div class="logo">The Processors' Waste Sorter</div>
+    <div class="subtitle">Waste Sorter Thing</div>
   </div>
-  <div class="small">PROTOTYPE V1.0</div>
+  <div class="small">Sajal Karna, Evan Witherspoon, Jesse Trinh</div>
 </header>
 
 <main>
@@ -209,7 +190,7 @@ input {
 
   <!-- CAMERA -->
   <section class="panel">
-    <h2>01 / Camera Feed</h2>
+    <h2>Camera</h2>
     <div class="camera" id="camera">
       Camera not started
     </div>
@@ -223,7 +204,7 @@ input {
 
   <!-- AI RESULTS -->
   <section class="panel">
-    <h2>02 / AI Classification</h2>
+    <h2>AI Sorting Thing</h2>
 
     <p class="small">CURRENT PREDICTION</p>
     <div class="result" id="prediction">Waiting...</div>
@@ -237,7 +218,7 @@ input {
     </div>
 
     <p class="small" id="aiStatus">
-      Load your model to begin.
+      Load model to begin.
     </p>
 
     <div id="allPredictions"></div>
@@ -245,7 +226,9 @@ input {
 
   <!-- MODEL SETTINGS -->
   <section class="panel">
-    <h2>03 / AI Model</h2>
+    <h2>Model JSON File</h2>
+
+ 
 
     <button onclick="loadModel()">Load Local AI Model</button>
 
@@ -254,7 +237,7 @@ input {
 
   <!-- ARDUINO -->
   <section class="panel">
-    <h2>04 / Hardware Connection</h2>
+    <h2>Connect Arduino</h2>
 
     <p class="small">Arduino Uno R3 / USB Serial</p>
 
@@ -273,15 +256,15 @@ input {
 
   <!-- MANUAL CONTROLS -->
   <section class="panel">
-    <h2>05 / Manual Servo Testing</h2>
+    <h2>Manual Servo Testing</h2>
 
     <p class="small">
       Test the sorting mechanism independently of the AI.
     </p>
 
-    <button onclick="sendCommand('R')">Recyclable</button>
-    <button onclick="sendCommand('C')">Compost</button>
-    <button onclick="sendCommand('L')">Landfill</button>
+    <button onclick="sendCommand('R')">Cardboard and Paper</button>
+    <button onclick="sendCommand('C')">Plastic</button>
+    <button onclick="sendCommand('N')">Nothing</button>
     <button class="secondary" onclick="sendCommand('N')">
       Reset
     </button>
@@ -291,15 +274,15 @@ input {
 
   <!-- SYSTEM LOG -->
   <section class="panel">
-    <h2>06 / System Activity</h2>
+    <h2>System Status</h2>
     <div class="log" id="log">
-      EcoSort initialized.<br>
+      Website initialized.<br>
       Awaiting system startup...
     </div>
   </section>
 
   <section class="panel full">
-    <h2>System Settings</h2>
+    <h2>Settings</h2>
 
     <label class="small">
       Minimum AI confidence:
@@ -351,10 +334,11 @@ let objectProcessed = false;
 let busy = false;
 
 const classCommands = {
-  "recyclable": "R",
-  "recycle": "R",
-  "compost": "C",
-  "landfill": "L"
+  "cardboard": "R",
+  "paper": "R",
+  "plastic": "C",
+  "landfill": "L",
+  "nothing": "N"
 };
 
 const emptyLabels = [
@@ -415,7 +399,6 @@ async function startCamera() {
 // MODEL LOADING
 // ==============================
 
-
 async function loadModel() {
   try {
     document.getElementById("modelStatus").textContent =
@@ -427,12 +410,12 @@ async function loadModel() {
     );
 
     document.getElementById("modelStatus").textContent =
-      "Local AI model successfully loaded!";
+      "AI model successfully loaded!";
 
     document.getElementById("aiStatus").textContent =
       "Ready for image classification.";
 
-    log("Local Teachable Machine model loaded.");
+    log("Local AI model loaded.");
 
   } catch (error) {
     model = null;
@@ -442,10 +425,9 @@ async function loadModel() {
 
     log("Model error: " + error.message);
 
-    alert("Could not load your local model. Check your folder structure.");
+    console.error(error);
   }
 }
-
 
 
 // ==============================
@@ -563,4 +545,84 @@ async function connectArduino() {
 
     document.getElementById("connectBtn").disabled = true;
 
-    log("Arduino connected successfupython -m http.server 8000
+    log("Arduino connected successfully.");
+
+  } catch (error) {
+    log("Arduino connection error: " + error.message);
+  }
+}
+
+
+// ==============================
+// SERVO COMMANDS
+// ==============================
+
+async function sendCommand(command) {
+  if (!writer) {
+    alert("Connect your Arduino first!");
+    return;
+  }
+
+  try {
+    await writer.write(
+      new TextEncoder().encode(command)
+    );
+
+    document.getElementById("servoStatus").textContent =
+      "Last command: " + command;
+
+    log("Command sent: " + command);
+
+  } catch (error) {
+    log("Serial write error: " + error.message);
+  }
+}
+
+
+// ==============================
+// AUTOMATIC MODE
+// ==============================
+
+function toggleAuto() {
+  if (!model || !webcam) {
+    alert("Load the model and start the camera first.");
+    return;
+  }
+
+  if (!writer) {
+    alert("Connect your Arduino first.");
+    return;
+  }
+
+  autoMode = !autoMode;
+
+  stableCount = 0;
+  lastClass = "";
+
+  document.getElementById("autoBtn").textContent =
+    autoMode ? "Disable Automatic Sorting" :
+    "Enable Automatic Sorting";
+
+  document.getElementById("autoStatus").textContent =
+    autoMode ? "Automatic sorting active" :
+    "Automatic mode disabled";
+
+  log("Automatic mode: " + autoMode);
+}
+
+
+// ==============================
+// SETTINGS
+// ==============================
+
+function updateThreshold() {
+  threshold = document.getElementById("threshold").value / 100;
+
+  document.getElementById("thresholdValue").textContent =
+    Math.round(threshold * 100);
+}
+
+</script>
+
+</body>
+</html>
