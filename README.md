@@ -16,7 +16,12 @@ I suggest downloading [AI-Waste-Sorter.zip](AI-Waste-Sorter.zip) from the repo. 
 
 1.Once you extract it, you will get a folder called *AI-Waste-Sorter*. Inside that you will find *index.html* which contains the HTML, CSS, and JavaScript code for the website. Do not open the website through that as it will not work. You will also find a folder called *AISorter* which contains AISorter.ino which is the Arduino file that controls the servo. You will also find a folder called *my_model* which contains *model.json*, *metadata.json*, and *weights.bin*. This file comes from the Teachable Machine Website. **DO NOT CHANGE THE NAMES OF THESE FILES OR THE FOLDER!** If you want to use a different model, make sure you rename that folder *"my_model"*.
 
-2. Right click the *AI-Waste-Sorter* folder and click open in terminal. You should see something like:
+2.Right click the *AI-Waste-Sorter* folder and click open in terminal. You should see something like:
+
 ```C:\Users\YOURUSERNAME\OneDrive\Documents\AI-Waste-Sorter>```
+
 If you don't see "OneDrive" or "Documents," that's okay (I think). That's just where your file is located. Next to the    arrow type:
-```python3 -m http.server 8000``` and press Enter.
+
+```python3 -m http.server 8000``` 
+
+and press Enter.
