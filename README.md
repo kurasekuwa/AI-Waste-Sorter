@@ -122,3 +122,28 @@ Most of the Javascript and CSS are resource websites or other repos which will b
     return;
   }
 ```
+## References
+**Project Inspiration:**
+https://projecthub.arduino.cc/rinme/smart-waste-segregation-system-using-arduino-uno-q-36d264
+
+**MAIN SOURCES:**
+https://github.com/googlecreativelab/teachablemachine-community/blob/master/libraries/image/README.md
+https://codelabs.developers.google.com/tensorflowjs-transfer-learning-teachable-machine#14
+
+**JAVASCRIPT FUNCTIONS AND STUFF THAT WE NEEDED:**
+https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices
+https://developer.mozilla.org/en-US/docs/Web/API/Web_Serial_API
+https://codelabs.developers.google.com/codelabs/web-serial
+https://developer.chrome.com/docs/capabilities/serial/
+https://docs.python.org/3/library/http.server.html
+https://www.geeksforgeeks.org/javascript/debouncing-in-javascript/
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/now
+https://www.reddit.com/r/learnjavascript/comments/nlng6t/adding_a_delay_to_each_iteration_of_loop/
+https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model/Events
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/now
+https://developer.chrome.com/docs/capabilities/usb
+https://developer.chrome.com/docs/capabilities/serial/
+https://developer.mozilla.org/en-US/docs/Web/API/Window/alert
+
+
+
