@@ -1,4 +1,4 @@
-# AI-Waste-Sorter
+# Automated-Waste-Sorter
 
 ## Introduction
 Hello! Hi there! What's up! My name is kurasekuwa and this is my team's version of an AI-based Camera Waste Sorter. We used:
