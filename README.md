@@ -128,11 +128,13 @@ Most of the Javascript and CSS are resource websites or other repos which will b
 https://projecthub.arduino.cc/rinme/smart-waste-segregation-system-using-arduino-uno-q-36d264
 
 **MAIN SOURCES:**
+
 https://github.com/googlecreativelab/teachablemachine-community/blob/master/libraries/image/README.md
 
 https://codelabs.developers.google.com/tensorflowjs-transfer-learning-teachable-machine#14
 
 **JAVASCRIPT FUNCTIONS AND STUFF THAT WE NEEDED:**
+
 https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices
 
 https://developer.mozilla.org/en-US/docs/Web/API/Web_Serial_API
