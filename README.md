@@ -125,41 +125,4 @@ Most of the Javascript and CSS are resource websites or other repos which will b
 
     return;
   }
-
-  // UPDATE STABILITY TIMER
-  const elapsed = now - candidateSince;
-
-  document.getElementById("aiStatus").textContent =
-    "Stable prediction: " +
-    (elapsed / 1000).toFixed(1) +
-    " / " +
-    (detectingDelay / 1000) +
-    " seconds";
-
-  // SEND COMMAND AFTER 1.5 SECONDS
-  if (elapsed >= detectingDelay) {
-    busy = true;
-
-    try {
-      const sent = await sendCommand(classCommands[label]);
-
-      if (sent) {
-        objectProcessed = true;
-
-        log("Confirmed and sorted: " + label);
-
-        document.getElementById("aiStatus").textContent =
-          "Sorting complete. Remove the object to continue.";
-      } else {
-        document.getElementById("aiStatus").textContent =
-          "Command was not sent. Check Arduino connection.";
-      }
-
-    } finally {
-      busy = false;
-      candidateSince = 0;
-      lastClass = "";
-    }
-  }
-}
 ```
