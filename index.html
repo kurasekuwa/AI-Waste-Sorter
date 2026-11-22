@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Processors' Waste Sorter</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
+
+<style>
+body {
+    background-color: lightgreen;
+    font-family: "Times New Roman", serif;
+    color: black;
+    margin: 15px;
+}
+
+header {
+    background-color: green;
+    color: white;
+    padding: 15px;
+    text-align: center;
+    border: 2px solid black;
+}
+
+.logo { font-size: 30px; font-weight: bold; }
+.subtitle { font-size: 14px; }
+main { margin: 20px; }
+
+h1 { color: darkgreen; text-align: center; }
+h2 { color: green; text-decoration: underline; }
+.description { text-align: center; }
+
+.grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.panel {
+    background-color: white;
+    border: 2px solid black;
+    padding: 15px;
+    border-radius: 0px;
+}
+
+.camera {
+    background-color: lightgray;
+    width: 100%;
+    min-height: 250px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid black;
+    overflow: hidden;
+}
+
+.camera canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+button {
+    background-color: lightgray;
+    color: black;
+    border: 2px outset gray;
+    padding: 8px;
+    margin: 5px;
+    cursor: pointer;
+    font-family: "Times New Roman", serif;
+    font-size: 14px;
+}
+
+button:active { border-style: inset; }
+button.secondary { background-color: lightgray; color: black; }
+button:disabled { color: gray; cursor: not-allowed; }
+
+input {
+    padding: 7px;
+    border: 1px solid black;
+    margin: 5px 0;
+}
+
+.status { color: darkgreen; font-weight: bold; }
+.result { font-size: 26px; font-weight: bold; }
+.confidence { color: darkgreen; }
+
+.bar {
+    height: 15px;
+    background-color: lightgray;
+    border: 1px solid black;
+}
+
+.fill {
+    height: 100%;
+    width: 0%;
+    background-color: green;
+}
+
+.small { font-size: 13px; }
+
+.log {
+    background-color: black;
+    color: lime;
+    padding: 10px;
+    height: 120px;
+    overflow-y: scroll;
+    font-family: monospace;
+}
+
+.full { grid-column: 1 / -1; }
+
+@media (max-width: 700px) {
+    .grid { grid-template-columns: 1fr; }
+    .full { grid-column: auto; }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div>
+    <div class="logo">The Processors' Waste Sorter</div>
+    <div class="subtitle">Waste Sorter Thing</div>
+  </div>
+  <div class="small">Sajal Karna, Evan Witherspoon, Jesse Trinh</div>
+</header>
+
+<main>
+<h1>Waste Sorter Control Panel</h1>
+<p class="description">
+  Proof of Concept of an Automatic Waste Sorter for Engineering Discovery Project 
+</p>
+
+<div class="grid">
+
+  <section class="panel">
+    <h2>Camera</h2>
+    <div class="camera" id="camera">Camera not started</div>
+    <p class="status" id="cameraStatus">Camera offline</p>
+    <button id="cameraBtn" onclick="startCamera()">Start Camera</button>
+  </section>
+
+  <section class="panel">
+    <h2>AI Sorting Thing</h2>
+    <p class="small">PREDICTION:</p>
+    <div class="result" id="prediction">Waiting...</div>
+    <p class="confidence">Confidence: <span id="confidence">0%</span></p>
+    <div class="bar"><div class="fill" id="confidenceBar"></div></div>
+    <p class="small" id="aiStatus">Load model to begin.</p>
+    <div id="allPredictions"></div>
+  </section>
+
+  <section class="panel">
+    <h2>Model JSON File</h2>
+    <button onclick="loadModel()">Load Model</button>
+    <p class="status" id="modelStatus">Model not loaded</p>
+  </section>
+
+  <section class="panel">
+    <h2>Connect Arduino</h2>
+    <p class="small">Arduino Uno R3</p>
+    <p class="status" id="arduinoStatus">Arduino disconnected</p>
+    <button onclick="connectArduino()" id="connectBtn">Connect Arduino</button>
+    <p class="small">Serial communication: 9600 baud</p>
+  </section>
+
+  <section class="panel">
+    <h2>Manual Servo Testing</h2>
+    <p class="small">Test the sorting mechanism independently of the model.</p>
+    <button onclick="sendCommand('R')">Cardboard and Paper</button>
+    <button onclick="sendCommand('C')">Plastic</button>
+    <button onclick="sendCommand('N')">Reset</button>
+    <p class="status" id="servoStatus">Servo idle</p>
+  </section>
+
+  <section class="panel">
+    <h2>System Status</h2>
+    <div class="log" id="log">
+      Website initialized.<br>
+      Awaiting system startup...
+    </div>
+  </section>
+
+  <section class="panel full">
+    <h2>Settings</h2>
+    <label class="small">
+      Minimum AI confidence:
+      <span id="thresholdValue">85</span>%
+    </label>
+    <input
+      type="range"
+      id="threshold"
+      min="50"
+      max="99"
+      value="85"
+      oninput="updateThreshold()"
+    />
+    <p class="small">
+      Automatic sorting waits for confidence
+      to remain stable for 1.5 seconds.
+    </p>
+    <button onclick="toggleAuto()" id="autoBtn" class="secondary">
+      Enable Automatic Sorting
+    </button>
+    <p class="status" id="autoStatus">Automatic mode disabled</p>
+  </section>
+
+</div>
+</main>
+
+<script>
+
+
+
+// Variables
+let model = null;
+let webcam = null;
+let port = null;
+let writer = null;
+
+let autoMode = false;
+let threshold = 0.85;
+
+let lastClass = "";
+let candidateSince = 0;
+let emptySince = 0;
+
+let objectProcessed = false;
+let busy = false;
+let cameraRunning = false;
+
+const detectingDelay = 1500;
+const emptyDelay = 1000;
+
+// Empty-scene detection has its own threshold so it is not blocked
+// by the normal object-sorting confidence slider.
+const emptyResetThreshold = 0.50;
+
+// From metadata.json.
+const classCommands = {
+  "cardboard": "R",
+  "paper": "R",
+  "plastic": "C"
+};
+
+const emptyLabels = ["nothing", "empty", "no object"];
+
+
+// Logging in the Box
+
+function log(message) {
+  const box = document.getElementById("log");
+  box.innerHTML += "<br>> " + message;
+  box.scrollTop = box.scrollHeight;
+}
+
+//This is for loading the model
+
+async function loadModel() {
+  try {
+    if (typeof tmImage === "undefined") {
+      throw new Error("Teachable Machine library did not load.");
+    }
+
+    document.getElementById("modelStatus").textContent =
+      "Loading model...";
+
+    model = await tmImage.load(
+      "./my_model/model.json",
+      "./my_model/metadata.json"
+    );
+
+    document.getElementById("modelStatus").textContent =
+      "Modell successfully loaded!";
+
+    document.getElementById("aiStatus").textContent =
+      "Ready for image classification.";
+
+    log("Local AI model loaded.");
+  } catch (error) {
+    model = null;
+    document.getElementById("modelStatus").textContent =
+      "Model loading failed: " + error.message;
+    log("Model error: " + error.message);
+    console.error(error);
+  }
+}
+
+
+// CAMERA STARTUP
+
+async function startCamera() {
+  try {
+    if (!model) {
+      alert("Load model first!");
+      return;
+    }
+
+    if (cameraRunning) return;
+
+    webcam = new tmImage.Webcam(320, 320, true);
+
+    await webcam.setup();
+    await webcam.play();
+
+    const camera = document.getElementById("camera");
+    camera.innerHTML = "";
+    camera.appendChild(webcam.canvas);
+
+    cameraRunning = true;
+
+    document.getElementById("cameraStatus").textContent =
+      "Camera online";
+
+    document.getElementById("cameraBtn").disabled = true;
+
+    log("Webcam started.");
+
+    // Start the continuous camera + prediction loop.
+    window.requestAnimationFrame(cameraLoop);
+  } catch (error) {
+    cameraRunning = false;
+    document.getElementById("cameraStatus").textContent =
+      "Camera error: " + error.message;
+    log("Camera error: " + error.message);
+    console.error(error);
+    alert("Could not start webcam: " + error.message);
+  }
+}
+
+async function cameraLoop() {
+  if (!cameraRunning || !webcam) return;
+
+  try {
+    webcam.update();
+
+    if (model) {
+      await predict();
+    }
+  } catch (error) {
+    document.getElementById("aiStatus").textContent =
+      "Camera/prediction error: " + error.message;
+    console.error("Camera loop error:", error);
+  }
+
+  if (cameraRunning) {
+    window.requestAnimationFrame(cameraLoop);
+  }
+}
+
+//Prediction function as well as the artificial delay
+
+
+async function predict() {
+  const predictions = await model.predict(webcam.canvas);
+
+  predictions.sort((a, b) => b.probability - a.probability);
+
+  const best = predictions[0];
+  if (!best) return;
+
+  const label = best.className.toLowerCase().trim();
+  const probability = best.probability;
+
+  // Update dashboard
+  document.getElementById("prediction").textContent = best.className;
+
+  document.getElementById("confidence").textContent =
+    (probability * 100).toFixed(1) + "%";
+
+  document.getElementById("confidenceBar").style.width =
+    (probability * 100) + "%";
+
+  document.getElementById("allPredictions").innerHTML =
+    predictions.map(p =>
+      `<p class="small">${p.className}: ${(p.probability * 100).toFixed(1)}%</p>`
+    ).join("");
+
+  if (!autoMode || busy) return;
+
+  const now = Date.now();
+
+  // CHECK EMPTY SCENE BEFORE NORMAL CONFIDENCE CHECK
+  if (emptyLabels.includes(label)) {
+
+    lastClass = "";
+    candidateSince = 0;
+
+    if (probability >= emptyResetThreshold) {
+
+      if (emptySince === 0) {
+        emptySince = now;
+        log("Empty scene detected: " + label +
+            " (" + (probability * 100).toFixed(1) + "%). Confirming...");
+      }
+
+      if (objectProcessed && now - emptySince >= emptyDelay) {
+        objectProcessed = false;
+
+        log("Empty scene confirmed. Ready for next object.");
+
+        document.getElementById("aiStatus").textContent =
+          "Ready for next object.";
+      } else if (!objectProcessed) {
+        document.getElementById("aiStatus").textContent =
+          "No object detected. Ready.";
+      }
+
+    } else {
+      emptySince = 0;
+
+      document.getElementById("aiStatus").textContent =
+        "Empty scene confidence too low. Waiting...";
+    }
+
+    return;
+  }
+
+  // Reset empty-scene timer when an object or other class appears
+  emptySince = 0;
+
+  // CHECK NORMAL OBJECT CONFIDENCE
+  if (probability < threshold) {
+    lastClass = "";
+    candidateSince = 0;
+
+    document.getElementById("aiStatus").textContent =
+      "Low confidence - waiting for a clearer image.";
+
+    // Diagnostic entry: shows what the model predicts when confidence is low.
+    if (objectProcessed) {
+      log("Waiting to reset. Current prediction: " + label +
+          " (" + (probability * 100).toFixed(1) + "%).");
+    }
+
+    return;
+  }
+
+  // IGNORE UNKNOWN CLASSIFICATIONS
+  if (!Object.prototype.hasOwnProperty.call(classCommands, label)) {
+    lastClass = "";
+    candidateSince = 0;
+
+    document.getElementById("aiStatus").textContent =
+      "Unrecognized class - not sorting.";
+
+    return;
+  }
+
+  // WAIT UNTIL PREVIOUS OBJECT HAS BEEN REMOVED
+  if (objectProcessed) {
+    document.getElementById("aiStatus").textContent =
+      "Sorting complete. Remove the object to continue.";
+
+    return;
+  }
+
+  // START TIMER FOR A NEW CLASSIFICATION
+  if (label !== lastClass) {
+    lastClass = label;
+    candidateSince = now;
+
+    document.getElementById("aiStatus").textContent =
+      "Checking classification stability...";
+
+    return;
+  }
+
+  // UPDATE STABILITY TIMER
+  const elapsed = now - candidateSince;
+
+  document.getElementById("aiStatus").textContent =
+    "Stable prediction: " +
+    (elapsed / 1000).toFixed(1) +
+    " / " +
+    (detectingDelay / 1000) +
+    " seconds";
+
+  // SEND COMMAND AFTER 1.5 SECONDS
+  if (elapsed >= detectingDelay) {
+    busy = true;
+
+    try {
+      const sent = await sendCommand(classCommands[label]);
+
+      if (sent) {
+        objectProcessed = true;
+
+        log("Confirmed and sorted: " + label);
+
+        document.getElementById("aiStatus").textContent =
+          "Sorting complete. Remove the object to continue.";
+      } else {
+        document.getElementById("aiStatus").textContent =
+          "Command was not sent. Check Arduino connection.";
+      }
+
+    } finally {
+      busy = false;
+      candidateSince = 0;
+      lastClass = "";
+    }
+  }
+}
+
+
+
+// Arduino connection and serial port
+
+async function connectArduino() {
+  if (!("serial" in navigator)) {
+    alert("Web Serial is not supported. Please use Chrome or Edge.");
+    return;
+  }
+
+  try {
+    port = await navigator.serial.requestPort();
+    await port.open({ baudRate: 9600 });
+
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    if (!port.writable) {
+      throw new Error("Arduino serial connection is not writable.");
+    }
+
+    writer = port.writable.getWriter();
+
+    document.getElementById("arduinoStatus").textContent =
+      "Arduino connected";
+
+    document.getElementById("connectBtn").disabled = true;
+
+    log("Arduino connected successfully.");
+  } catch (error) {
+    document.getElementById("arduinoStatus").textContent =
+      "Arduino connection failed";
+    log("Arduino connection error: " + error.message);
+    console.error(error);
+  }
+}
+
+
+// Sending servo commands
+
+async function sendCommand(command) {
+  if (!writer) {
+    alert("Connect your Arduino first!");
+    return false;
+  }
+
+  try {
+    await writer.write(new TextEncoder().encode(command));
+
+    document.getElementById("servoStatus").textContent =
+      "Last command: " + command;
+
+    log("Command sent: " + command);
+    return true;
+  } catch (error) {
+    log("Serial write error: " + error.message);
+    console.error(error);
+    return false;
+  }
+}
+
+
+// Autommatic mode
+
+function toggleAuto() {
+  if (!model || !webcam || !cameraRunning) {
+    alert("Load the model and start the camera first.");
+    return;
+  }
+
+  if (!writer) {
+    alert("Connect Arduino first.");
+    return;
+  }
+
+  autoMode = !autoMode;
+
+  // Clear any previous candidate timing when changing modes.
+  lastClass = "";
+  candidateSince = 0;
+  emptySince = 0;
+
+  document.getElementById("autoBtn").textContent =
+    autoMode ? "Disable Automatic Sorting" : "Enable Automatic Sorting";
+
+  document.getElementById("autoStatus").textContent =
+    autoMode ? "Automatic sorting active" : "Automatic mode disabled";
+
+  document.getElementById("aiStatus").textContent =
+    autoMode ? "Waiting for a stable object classification." : "AI monitoring only.";
+
+  log("Automatic mode: " + autoMode);
+}
+
+
+// Settings for slider
+
+function updateThreshold() {
+  threshold = Number(document.getElementById("threshold").value) / 100;
+
+  document.getElementById("thresholdValue").textContent =
+    Math.round(threshold * 100);
+}
+</script>
+
+</body>
+</html>
